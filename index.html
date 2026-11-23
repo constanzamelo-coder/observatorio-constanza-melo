@@ -1,0 +1,781 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Observatorio del Empleo</title>
+<meta name="description" content="Desocupación por región según el INE: elige tu región, compárala con otra y mira a mujeres y hombres. Las cifras se leen en vivo desde un agente de IA.">
+<style>
+/* ============================================================
+   TOKENS · primitivos (valores) y semánticos (uso).
+   Los componentes usan SOLO tokens semánticos.
+   El modo oscuro cambia únicamente los semánticos.
+   ============================================================ */
+:root {
+  /* primitivos: los valores. Fondo humo, azul marino y naranja quemado (regla 60-30-10) */
+  --humo: #F2F3F5; --blanco: #FFFFFF;
+  --marino-50: #EEF2F8;  --marino-100: #DCE6F4; --marino-200: #AEC4E4; --marino-300: #7C9FD0;
+  --marino-500: #44689F; --marino-900: #14284B; --marino-950: #0B1A33;
+  --grisazul-100: #E3E6EC; --grisazul-300: #C9CED8; --grisazul-500: #6B7690; --grisazul-700: #3A4A66;
+  --naranja-700: #B5470A; --naranja-50: #FBEEE4;
+  --rojo-700: #A32A1F; --rojo-50: #FBECEA; --ambar-800: #7A4B00; --ambar-50: #FFF4DC;
+  --verde-700: #1E6B3A; --verde-50: #E8F5EC;
+
+  /* semánticos: claro. Los componentes usan solo estos */
+  --color-fondo: var(--humo);                 /* 60% */
+  --color-superficie: var(--blanco);
+  --color-superficie-2: var(--marino-50);
+  --color-texto: var(--marino-900);           /* 30%: texto, títulos, menú y botones */
+  --color-texto-suave: var(--grisazul-700);
+  --color-borde: var(--grisazul-300);
+  --color-borde-fuerte: var(--grisazul-500);  /* bordes de controles: 3 a 1 como mínimo */
+  --color-acento: var(--marino-900);
+  --color-acento-fuerte: var(--marino-900);
+  --color-acento-activo: var(--marino-950);
+  --color-sobre-acento: var(--blanco);
+  --color-resalte: var(--naranja-700);        /* 10%: la más alta y las diferencias */
+  --color-resalte-fondo: var(--naranja-50);
+  --color-foco: var(--naranja-700);
+  --color-marco-tel: var(--marino-900);
+  --color-error: var(--rojo-700);       --color-error-fondo: var(--rojo-50);
+  --color-aviso: var(--ambar-800);      --color-aviso-fondo: var(--ambar-50);
+  --color-ok: var(--verde-700);         --color-ok-fondo: var(--verde-50);
+  --color-esqueleto: var(--grisazul-100);
+  /* escala del mapa: cinco tonos de azul, de claro (menos) a oscuro (más) */
+  --mapa-1: var(--marino-100); --mapa-t1: var(--marino-900);
+  --mapa-2: var(--marino-200); --mapa-t2: var(--marino-900);
+  --mapa-3: var(--marino-300); --mapa-t3: var(--marino-900);
+  --mapa-4: var(--marino-500); --mapa-t4: var(--blanco);
+  --mapa-5: var(--marino-900); --mapa-t5: var(--blanco);
+
+  /* tipografía */
+  --f-titular: Georgia, "Times New Roman", Times, serif;
+  --f-texto: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --f-codigo: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  --t-xs: 0.8125rem; --t-sm: 0.875rem; --t-base: 1rem;   --t-md: 1.125rem;
+  --t-lg: 1.25rem;   --t-xl: 1.75rem;  --t-2xl: 2.25rem;
+  --t-cifra: clamp(3.5rem, 14vw, 5rem);
+  --t-cifra-par: clamp(2rem, 9vw, 3rem);
+  --lh-texto: 1.55; --lh-titular: 1.15;
+
+  /* espaciado: base de 8 px */
+  --e-1: 0.25rem; --e-2: 0.5rem; --e-3: 1rem; --e-4: 1.5rem; --e-5: 2rem; --e-6: 3rem;
+
+  /* grilla y anchos */
+  --ancho-tel: 390px;       /* pantalla de teléfono de referencia */
+  --ancho-contenido: 54rem; /* columna de lectura */
+  --ancho-max: 68.75rem;    /* tope de escritorio: 1100 px */
+  --objetivo-tactil: 2.75rem; /* 44 px: tamaño mínimo de lo que se toca */
+
+  /* bordes y sombras: estilo plano */
+  --r-s: 4px; --r-m: 8px; --r-l: 12px; --r-tel: 30px;
+  --borde: 1px solid var(--color-borde);
+  --sombra-1: none;
+  --sombra-2: 0 10px 28px rgba(11, 26, 51, 0.16);
+}
+
+:root[data-tema="oscuro"] {
+  color-scheme: dark;
+  --color-fondo: #0E1626;
+  --color-superficie: #16213A;
+  --color-superficie-2: #1D2B4A;
+  --color-texto: #E9EDF5;
+  --color-texto-suave: #AEB9CF;
+  --color-borde: #2F3F63;
+  --color-borde-fuerte: #8190AD;
+  --color-acento: #AEC4E4;
+  --color-acento-fuerte: #DCE6F4;
+  --color-acento-activo: #FFFFFF;
+  --color-sobre-acento: #0E1626;
+  --color-resalte: #FF9A5C;  --color-resalte-fondo: #3A2216;
+  --color-foco: #FFA66B;
+  --color-marco-tel: #3A506A;
+  --color-error: #FF9C90;   --color-error-fondo: #3A1B18;
+  --color-aviso: #F2C36B;   --color-aviso-fondo: #33270E;
+  --color-ok: #8BD8A4;      --color-ok-fondo: #12301D;
+  --color-esqueleto: #25345A;
+  --mapa-1: #1E2D4D; --mapa-t1: #E9EDF5;
+  --mapa-2: #2F4A7D; --mapa-t2: #FFFFFF;
+  --mapa-3: #4A73B3; --mapa-t3: #FFFFFF;
+  --mapa-4: #86A7D9; --mapa-t4: #0E1626;
+  --mapa-5: #CFE0F7; --mapa-t5: #0E1626;
+  --sombra-2: 0 10px 28px rgba(0, 0, 0, 0.55);
+}
+
+/* ============================================================
+   BASE
+   ============================================================ */
+*, *::before, *::after { box-sizing: border-box; }
+html { scroll-behavior: smooth; scroll-padding-top: 5rem; -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0; background: var(--color-fondo); color: var(--color-texto);
+  font-family: var(--f-texto); font-size: var(--t-base); line-height: var(--lh-texto);
+}
+h1, h2, h3, h4 { font-family: var(--f-titular); line-height: var(--lh-titular); margin: 0; font-weight: 700; }
+p { margin: 0 0 var(--e-3); }
+a { color: var(--color-acento); text-underline-offset: 0.18em; }
+a:hover { color: var(--color-acento-fuerte); }
+code, .codigo { font-family: var(--f-codigo); font-size: 0.9em; }
+img, svg { max-width: 100%; }
+button, select, input, textarea { font: inherit; color: inherit; }
+
+/* foco visible en todo lo que se puede usar con teclado */
+:focus-visible { outline: 3px solid var(--color-foco); outline-offset: 2px; border-radius: var(--r-s); }
+.is-foco { outline: 3px solid var(--color-foco); outline-offset: 2px; }
+
+.solo-lectores {
+  position: absolute; width: 1px; height: 1px; overflow: hidden;
+  clip: rect(0 0 0 0); white-space: nowrap;
+}
+.saltar {
+  position: absolute; left: var(--e-3); top: -4rem; z-index: 100;
+  background: var(--color-acento); color: var(--color-sobre-acento);
+  padding: var(--e-2) var(--e-3); border-radius: var(--r-m);
+}
+.saltar:focus { top: var(--e-3); }
+
+/* ============================================================
+   ÁTOMOS
+   ============================================================ */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: var(--e-2);
+  min-height: var(--objetivo-tactil); padding: 0 var(--e-4);
+  background: var(--color-acento); color: var(--color-sobre-acento);
+  border: 2px solid var(--color-acento); border-radius: var(--r-m);
+  font-weight: 600; font-size: var(--t-base); cursor: pointer; text-decoration: none;
+  transition: background-color 0.15s, border-color 0.15s, transform 0.1s;
+}
+.btn:hover, .btn.is-hover { background: var(--color-acento-fuerte); border-color: var(--color-acento-fuerte); color: var(--color-sobre-acento); }
+.btn:active, .btn.is-activo { transform: translateY(1px); background: var(--color-acento-activo); border-color: var(--color-acento-activo); color: var(--color-sobre-acento); }
+.btn:disabled, .btn[aria-disabled="true"] {
+  background: var(--color-esqueleto); border-color: var(--color-esqueleto);
+  color: var(--color-texto-suave); cursor: not-allowed; transform: none;
+}
+.btn--sec { background: transparent; color: var(--color-acento); }
+.btn--sec:hover, .btn--sec.is-hover { background: var(--color-superficie-2); color: var(--color-acento-fuerte); border-color: var(--color-acento-fuerte); }
+.btn--sec:active, .btn--sec.is-activo { background: var(--color-superficie-2); color: var(--color-acento-fuerte); border-color: var(--color-acento-fuerte); }
+.btn--sec:disabled, .btn--sec[aria-disabled="true"] { background: transparent; border-color: var(--color-borde); color: var(--color-texto-suave); }
+.btn--chico { min-height: var(--objetivo-tactil); padding: 0 var(--e-3); font-size: var(--t-sm); }
+
+.enlace { color: var(--color-acento); text-decoration: underline; text-underline-offset: 0.18em; cursor: pointer; }
+.enlace:hover, .enlace.is-hover { color: var(--color-acento-fuerte); text-decoration-thickness: 2px; }
+.enlace:active, .enlace.is-activo { color: var(--color-texto); }
+.enlace[aria-disabled="true"] { color: var(--color-texto-suave); text-decoration: none; cursor: not-allowed; }
+
+.etiqueta {
+  display: inline-flex; align-items: center; gap: var(--e-1);
+  padding: 0.15rem var(--e-2); border-radius: 999px;
+  background: var(--color-superficie-2); color: var(--color-acento-fuerte);
+  border: 1px solid var(--color-borde); font-size: var(--t-xs); font-weight: 600; line-height: 1.4;
+}
+.etiqueta--aviso { background: var(--color-aviso-fondo); color: var(--color-aviso); border-color: transparent; }
+.etiqueta--ok { background: var(--color-ok-fondo); color: var(--color-ok); border-color: transparent; }
+
+.campo, .selector {
+  width: 100%; min-height: var(--objetivo-tactil); padding: 0 var(--e-3);
+  background: var(--color-superficie); color: var(--color-texto);
+  border: 2px solid var(--color-borde-fuerte); border-radius: var(--r-m);
+}
+.campo:hover, .selector:hover, .campo.is-hover, .selector.is-hover { border-color: var(--color-acento); }
+.campo:focus-visible, .selector:focus-visible { border-color: var(--color-acento); outline: 3px solid var(--color-foco); outline-offset: 2px; }
+.campo:disabled, .selector:disabled { background: var(--color-esqueleto); color: var(--color-texto-suave); cursor: not-allowed; }
+.campo[aria-invalid="true"] { border-color: var(--color-error); }
+textarea.campo { padding: var(--e-3); min-height: 6rem; resize: vertical; }
+.rotulo { display: block; font-size: var(--t-sm); font-weight: 600; margin-bottom: var(--e-1); }
+.ayuda { font-size: var(--t-sm); color: var(--color-texto-suave); margin: var(--e-1) 0 0; }
+
+.icono { width: 1.25em; height: 1.25em; flex: none; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; vertical-align: -0.2em; }
+
+/* la cifra: el átomo que manda en la pantalla */
+.cifra { font-family: var(--f-titular); font-weight: 700; line-height: 1; letter-spacing: -0.02em; color: var(--color-acento-fuerte); font-variant-numeric: lining-nums tabular-nums; }
+.cifra--grande { font-size: var(--t-cifra); }
+.cifra--media { font-size: var(--t-2xl); }
+.cifra--chica { font-size: var(--t-lg); }
+.cifra__unidad { font-size: 0.5em; margin-left: 0.05em; }
+
+/* ============================================================
+   MOLÉCULAS
+   ============================================================ */
+.tarjeta-cifra { background: var(--color-superficie); border: var(--borde); border-radius: var(--r-l); padding: var(--e-4); box-shadow: var(--sombra-1); }
+.tarjeta-cifra__region { font-size: var(--t-sm); color: var(--color-texto-suave); margin: 0 0 var(--e-2); }
+.tarjeta-cifra__region strong { color: var(--color-texto); }
+.tarjeta-cifra__variacion { font-size: var(--t-md); margin: var(--e-3) 0 0; }
+.tarjeta-cifra__comparacion { font-size: var(--t-base); color: var(--color-texto-suave); margin: var(--e-1) 0 0; }
+
+.linea-fuente { font-size: var(--t-sm); color: var(--color-texto-suave); margin: var(--e-3) 0 0; display: flex; flex-wrap: wrap; gap: var(--e-1) var(--e-2); align-items: center; }
+.linea-ia { font-size: var(--t-sm); color: var(--color-texto-suave); margin: var(--e-2) 0 0; }
+
+.selector-region { display: grid; gap: var(--e-1); }
+.leyenda { display: flex; flex-wrap: wrap; gap: var(--e-2) var(--e-3); margin: 0; padding: 0; list-style: none; font-size: var(--t-sm); }
+.leyenda li { display: inline-flex; align-items: center; gap: var(--e-2); }
+.leyenda__muestra { width: 1.25rem; height: 1.25rem; border-radius: var(--r-s); border: 1px solid var(--color-borde); }
+.m1 { background: var(--mapa-1); color: var(--mapa-t1); } .m2 { background: var(--mapa-2); color: var(--mapa-t2); }
+.m3 { background: var(--mapa-3); color: var(--mapa-t3); } .m4 { background: var(--mapa-4); color: var(--mapa-t4); }
+.m5 { background: var(--mapa-5); color: var(--mapa-t5); }
+
+/* ============================================================
+   ORGANISMOS
+   ============================================================ */
+.cabecera { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--e-3); padding: var(--e-3) var(--e-3); background: var(--color-superficie); border-bottom: var(--borde); }
+.cabecera__nombre { font-family: var(--f-titular); font-size: var(--t-md); font-weight: 700; color: var(--color-texto); margin: 0; }
+.cabecera__nav { display: flex; flex-wrap: wrap; gap: var(--e-1) var(--e-3); margin: 0; padding: 0; list-style: none; font-size: var(--t-sm); }
+.cabecera__nav a { display: inline-flex; align-items: center; min-height: var(--objetivo-tactil); }
+.cabecera__nav a[aria-current="page"] { font-weight: 700; color: var(--color-texto); text-decoration-thickness: 2px; }
+
+.ficha { display: grid; gap: var(--e-3); }
+.ficha__desglose { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--e-3); margin: 0; }
+.ficha__desglose div { background: var(--color-superficie-2); border-radius: var(--r-m); padding: var(--e-3); }
+.ficha__desglose dt { font-size: var(--t-xs); color: var(--color-texto-suave); }
+.ficha__desglose dd { margin: var(--e-1) 0 0; font-family: var(--f-titular); font-size: var(--t-lg); font-weight: 700; }
+
+.mapa { display: grid; grid-template-columns: repeat(2, 1fr); grid-template-rows: repeat(8, auto); grid-auto-flow: column; gap: var(--e-1); margin: 0; padding: 0; list-style: none; }
+.mapa__banda {
+  display: grid; grid-template-columns: 1fr auto; align-items: center; gap: var(--e-2);
+  width: 100%; min-height: var(--objetivo-tactil); height: 100%; padding: 0 var(--e-2); text-align: left;
+  border: 2px solid transparent; border-radius: var(--r-s); cursor: pointer; font-size: var(--t-sm); line-height: 1.2;
+}
+.mapa__banda > span:first-child { overflow-wrap: anywhere; }
+.mapa__banda:hover, .mapa__banda.is-hover { border-color: var(--color-texto); }
+.mapa__banda.is-foco { outline: 3px solid var(--color-foco); outline-offset: 2px; }
+.mapa__banda:disabled { opacity: 0.5; cursor: not-allowed; border-color: transparent; }
+.mapa__banda[aria-pressed="true"] { border-color: var(--color-texto); box-shadow: inset 0 0 0 2px var(--color-superficie); font-weight: 700; }
+.mapa__banda .num { font-family: var(--f-titular); font-weight: 700; font-variant-numeric: tabular-nums; }
+.mapa-nota { font-size: var(--t-xs); color: var(--color-texto-suave); margin: var(--e-2) 0 0; }
+
+.tabla-envoltura { position: relative; overflow-x: auto; border: var(--borde); border-radius: var(--r-m); background: var(--color-superficie); }
+.tabla { width: 100%; border-collapse: collapse; font-size: var(--t-sm); min-width: 34rem; }
+.tabla caption { text-align: left; padding: var(--e-3); font-weight: 600; }
+.tabla th, .tabla td { padding: var(--e-3); text-align: right; border-top: var(--borde); font-variant-numeric: tabular-nums; }
+.tabla th:first-child, .tabla td:first-child { text-align: left; }
+.tabla thead th { background: var(--color-superficie-2); border-top: 0; font-weight: 700; }
+.tabla th button { all: unset; cursor: pointer; display: inline-flex; align-items: center; gap: var(--e-1); min-height: var(--objetivo-tactil); }
+.tabla th button:focus-visible { outline: 3px solid var(--color-foco); outline-offset: 2px; }
+.tabla tbody tr { cursor: pointer; }
+.tabla tbody tr:hover { background: var(--color-superficie-2); }
+.tabla tbody tr[data-sel="true"] { background: var(--color-superficie-2); box-shadow: inset 4px 0 0 var(--color-acento); font-weight: 700; }
+.tabla tbody th { font-weight: inherit; }
+.fila-btn { all: unset; box-sizing: border-box; cursor: pointer; display: inline-flex; align-items: center; min-height: var(--objetivo-tactil); color: var(--color-acento); text-decoration: underline; text-underline-offset: 0.18em; }
+.fila-btn:hover { color: var(--color-acento-fuerte); }
+.fila-btn:focus-visible { outline: 3px solid var(--color-foco); outline-offset: 2px; border-radius: var(--r-s); }
+
+.nota { background: var(--color-superficie); border: var(--borde); border-radius: var(--r-l); padding: var(--e-4); }
+.nota__titular { font-size: var(--t-xl); margin: var(--e-2) 0; }
+.nota__bajada { font-size: var(--t-md); color: var(--color-texto-suave); margin-bottom: var(--e-3); }
+.nota__cuerpo { max-width: 62ch; }
+.nota__cifras { list-style: none; margin: var(--e-3) 0; padding: 0; display: grid; gap: var(--e-3); }
+.nota__cifras li { border-left: 4px solid var(--color-acento); padding-left: var(--e-3); }
+
+.pie { background: var(--color-superficie-2); border-top: var(--borde); padding: var(--e-3); font-size: var(--t-sm); color: var(--color-texto-suave); }
+.pie strong { color: var(--color-texto); }
+
+/* ============================================================
+   ESTADOS
+   ============================================================ */
+.estado { border-radius: var(--r-l); padding: var(--e-4); border: 1px solid var(--color-borde); background: var(--color-superficie); }
+.estado h4 { font-size: var(--t-md); margin-bottom: var(--e-2); }
+.estado p { margin-bottom: var(--e-3); }
+.estado--error { background: var(--color-error-fondo); border-color: var(--color-error); }
+.estado--error h4 { color: var(--color-error); }
+.estado--noconsta { background: var(--color-aviso-fondo); border-color: var(--color-aviso); }
+.estado--noconsta h4 { color: var(--color-aviso); }
+.estado--vacio { background: var(--color-superficie-2); border-style: dashed; }
+.esqueleto { display: block; border-radius: var(--r-s); background: var(--color-esqueleto); }
+@media (prefers-reduced-motion: no-preference) {
+  .esqueleto { animation: pulso 1.4s ease-in-out infinite; }
+  @keyframes pulso { 50% { opacity: 0.45; } }
+}
+
+/* ============================================================
+   PANTALLA: plantilla y página (la primera pantalla del producto)
+   ============================================================ */
+.pantalla { background: var(--color-superficie); border: var(--borde); overflow: hidden; }
+.pantalla__cuerpo { display: grid; gap: var(--e-4); padding: var(--e-3); }
+.pantalla__izq { display: grid; gap: var(--e-3); align-content: start; }
+.pantalla--tel { width: 100%; max-width: var(--ancho-tel); margin-inline: auto; border: 8px solid var(--color-marco-tel); border-radius: var(--r-tel); box-shadow: var(--sombra-2); }
+.pantalla--esc { width: 100%; border-radius: var(--r-m); box-shadow: var(--sombra-2); }
+.pantalla--esc .pantalla__cuerpo { grid-template-columns: 1fr 1fr; padding: var(--e-5); gap: var(--e-5); }
+@media (min-width: 48rem) {
+  .portada { align-items: start; }
+  .pantalla--scroll { max-height: 46rem; overflow-y: auto; }
+}
+.bloque-plantilla {
+  display: flex; align-items: center; gap: var(--e-3); padding: var(--e-3) var(--e-3);
+  background: repeating-linear-gradient(135deg, var(--color-superficie-2) 0 10px, var(--color-superficie) 10px 20px);
+  border: 2px dashed var(--color-acento); border-radius: var(--r-m); color: var(--color-acento-fuerte); font-weight: 600; font-size: var(--t-sm);
+}
+.bloque-plantilla b { flex: none; display: inline-grid; place-items: center; width: 1.75rem; height: 1.75rem; border-radius: 50%; background: var(--color-acento); color: var(--color-sobre-acento); font-size: var(--t-sm); }
+.bloque-plantilla--alto { min-height: 5.5rem; }
+.bloque-plantilla--mapa { min-height: 13rem; }
+
+/* ============================================================
+   DOCUMENTACIÓN (el marco del design system)
+   ============================================================ */
+.cabeza { position: sticky; top: 0; z-index: 30; background: var(--color-superficie); border-bottom: var(--borde); }
+.barra__fila { max-width: var(--ancho-max); margin: 0 auto; padding: var(--e-2) var(--e-3); display: flex; flex-wrap: wrap; align-items: end; gap: var(--e-3) var(--e-4); }
+.barra__marca { font-family: var(--f-titular); font-weight: 700; font-size: var(--t-md); margin-right: auto; align-self: center; }
+.barra__ctl { display: grid; gap: 0.1rem; }
+.barra__ctl .selector { min-width: 11rem; min-height: 2.5rem; }
+.barra__ctl--region { flex: 1 1 11rem; max-width: 18rem; }
+.indice { max-width: var(--ancho-max); margin: 0 auto; padding: 0 var(--e-3); }
+.indice ol { display: flex; gap: var(--e-1); margin: 0; padding: var(--e-2) 0; list-style: none; overflow-x: auto; scrollbar-width: thin; }
+.indice a { display: inline-flex; align-items: center; min-height: var(--objetivo-tactil); padding: 0 var(--e-3); border-radius: 999px; white-space: nowrap; text-decoration: none; color: var(--color-texto); font-size: var(--t-sm); border: 1px solid transparent; }
+.indice a:hover { background: var(--color-superficie-2); }
+.indice a[aria-current="true"] { background: var(--color-acento); color: var(--color-sobre-acento); font-weight: 600; }
+
+.marco { max-width: var(--ancho-max); margin: 0 auto; padding: var(--e-4) var(--e-3) var(--e-6); }
+.portada { display: grid; gap: var(--e-5); padding: var(--e-5) 0 var(--e-6); align-items: center; }
+.portada h1 { font-size: clamp(2rem, 6vw, 3.5rem); max-width: 16ch; margin-bottom: var(--e-3); }
+.portada p { max-width: 52ch; font-size: var(--t-md); color: var(--color-texto-suave); }
+.portada__meta { font-size: var(--t-sm); color: var(--color-texto-suave); }
+
+.seccion { padding: var(--e-6) 0 var(--e-4); border-top: 3px solid var(--color-acento); margin-top: var(--e-4); }
+.seccion > h2 { font-size: var(--t-2xl); margin-bottom: var(--e-3); }
+.seccion > h2 .n { color: var(--color-acento); margin-right: 0.35em; }
+.seccion > .intro { max-width: 62ch; color: var(--color-texto-suave); font-size: var(--t-md); }
+.seccion h3 { font-size: var(--t-xl); margin: var(--e-6) 0 var(--e-3); }
+.seccion h4 { font-size: var(--t-md); margin: var(--e-4) 0 var(--e-2); }
+.rejilla { display: grid; gap: var(--e-3); }
+.escena { background: var(--color-superficie); border: var(--borde); border-radius: var(--r-l); padding: var(--e-4); }
+.escena--fondo { background: var(--color-fondo); }
+.escena > :last-child { margin-bottom: 0; }
+.etiqueta-estado { font-size: var(--t-xs); color: var(--color-texto-suave); display: block; margin-top: var(--e-2); }
+.uso { display: grid; gap: var(--e-3); }
+.uso p { margin: 0; font-size: var(--t-sm); }
+.uso .si::before { content: "Úsalo para: "; font-weight: 700; color: var(--color-ok); }
+.uso .no::before { content: "No lo uses para: "; font-weight: 700; color: var(--color-error); }
+
+.lienzo { display: grid; gap: var(--e-3); margin: var(--e-4) 0; padding: 0; list-style: none; }
+.lienzo li { background: var(--color-superficie); border: var(--borde); border-radius: var(--r-m); padding: var(--e-3); border-top: 4px solid var(--color-acento); }
+.lienzo h4 { margin: 0 0 var(--e-2); font-size: var(--t-base); font-family: var(--f-texto); }
+.lienzo p { margin: 0; font-size: var(--t-sm); }
+
+.boceto { display: grid; gap: var(--e-4); align-items: start; }
+.boceto__tel { width: 100%; max-width: 19rem; margin-inline: auto; border: 8px solid var(--color-marco-tel); border-radius: var(--r-tel); padding: var(--e-3); background: var(--color-superficie); display: grid; gap: var(--e-2); }
+.boceto__caja { display: flex; align-items: center; gap: var(--e-2); padding: var(--e-2) var(--e-3); border: 2px solid var(--color-acento); border-radius: var(--r-s); background: var(--color-superficie-2); font-size: var(--t-xs); font-weight: 600; }
+.boceto__caja b { flex: none; display: inline-grid; place-items: center; width: 1.4rem; height: 1.4rem; border-radius: 50%; background: var(--color-acento); color: var(--color-sobre-acento); font-family: var(--f-texto); font-size: var(--t-xs); line-height: 1; }
+.boceto__caja--cifra { min-height: 5rem; font-family: var(--f-titular); font-size: var(--t-xl); justify-content: flex-start; }
+.boceto__caja--mapa { min-height: 8rem; }
+.boceto__lista { margin: 0; padding-left: 1.25rem; display: grid; gap: var(--e-2); }
+
+.principios { display: grid; gap: var(--e-3); margin: var(--e-4) 0 0; padding: 0; list-style: none; }
+.principios li { background: var(--color-superficie); border: var(--borde); border-left: 6px solid var(--color-acento); border-radius: var(--r-m); padding: var(--e-3); }
+.principios strong { display: block; font-family: var(--f-titular); font-size: var(--t-md); margin-bottom: var(--e-1); }
+.principios p { margin: 0; font-size: var(--t-sm); color: var(--color-texto-suave); }
+
+.tokens { display: grid; gap: var(--e-3); grid-template-columns: repeat(auto-fill, minmax(9.5rem, 1fr)); margin: var(--e-3) 0; padding: 0; list-style: none; }
+.token { all: unset; box-sizing: border-box; width: 100%; display: grid; gap: var(--e-1); cursor: pointer; border: var(--borde); border-radius: var(--r-m); background: var(--color-superficie); overflow: hidden; }
+.token:hover { border-color: var(--color-acento); box-shadow: var(--sombra-1); }
+.token:focus-visible { outline: 3px solid var(--color-foco); outline-offset: 2px; }
+.token__muestra { height: 3.25rem; border-bottom: var(--borde); }
+.token__nombre { font-family: var(--f-codigo); font-size: var(--t-xs); padding: 0 var(--e-2); word-break: break-all; }
+.token__valor { font-size: var(--t-xs); color: var(--color-texto-suave); padding: 0 var(--e-2) var(--e-2); font-family: var(--f-codigo); }
+.token--copiado { border-color: var(--color-ok); }
+
+.tabla-doc { width: 100%; min-width: 30rem; border-collapse: collapse; font-size: var(--t-sm); background: var(--color-superficie); }
+.tabla-doc th, .tabla-doc td { padding: var(--e-2) var(--e-3); border: var(--borde); text-align: left; vertical-align: top; }
+.tabla-doc thead th { background: var(--color-superficie-2); }
+.pasa { color: var(--color-ok); font-weight: 700; }
+.falla { color: var(--color-error); font-weight: 700; }
+.muestra-texto { display: inline-block; padding: 0.2rem 0.6rem; border-radius: var(--r-s); font-weight: 600; }
+
+.escala-tipo { display: grid; gap: var(--e-3); }
+.escala-tipo > div { display: grid; gap: var(--e-1); padding-bottom: var(--e-3); border-bottom: var(--borde); }
+.escala-tipo small { color: var(--color-texto-suave); font-family: var(--f-codigo); font-size: var(--t-xs); }
+.escala-esp { display: grid; gap: var(--e-2); }
+.escala-esp div { display: grid; grid-template-columns: 6.5rem 1fr; gap: var(--e-3); align-items: center; font-family: var(--f-codigo); font-size: var(--t-xs); }
+.escala-esp i { display: block; height: 0.9rem; background: var(--color-acento); border-radius: 2px; }
+
+.interruptor { display: inline-flex; flex-wrap: wrap; max-width: 100%; border: 2px solid var(--color-acento); border-radius: var(--r-m); overflow: hidden; }
+.interruptor button { min-height: var(--objetivo-tactil); padding: 0 var(--e-3); background: transparent; border: 0; cursor: pointer; font-weight: 600; color: var(--color-acento); }
+.interruptor button[aria-pressed="true"] { background: var(--color-acento); color: var(--color-sobre-acento); }
+.interruptor button:focus-visible { outline-offset: -4px; }
+
+.aviso-copiado { position: fixed; bottom: var(--e-4); left: 50%; transform: translateX(-50%); background: var(--color-texto); color: var(--color-fondo); padding: var(--e-2) var(--e-3); border-radius: 999px; font-size: var(--t-sm); z-index: 60; }
+.aviso-copiado[hidden] { display: none; }
+
+.declaracion { background: var(--color-superficie-2); border: var(--borde); border-left: 6px solid var(--color-acento); border-radius: var(--r-m); padding: var(--e-4); }
+.declaracion ul { margin: var(--e-2) 0 var(--e-3); padding-left: 1.25rem; display: grid; gap: var(--e-2); }
+
+.marcado { background: var(--color-error-fondo); color: var(--color-error); padding: 0 0.2em; border-radius: 3px; font-weight: 700; }
+.resultado-voz { margin-top: var(--e-3); padding: var(--e-3); border-radius: var(--r-m); background: var(--color-superficie-2); font-size: var(--t-sm); }
+
+@media (max-width: 47.99rem) {
+  .cabeza { display: contents; }
+  .barra { background: var(--color-superficie); border-bottom: var(--borde); }
+  .barra__marca { flex-basis: 100%; font-size: var(--t-base); }
+  .barra__fila { gap: var(--e-2) var(--e-3); }
+  .barra__ctl--region { max-width: none; }
+  .indice { position: sticky; top: 0; z-index: 30; background: var(--color-superficie); border-bottom: var(--borde); }
+}
+@media (min-width: 48rem) {
+  html { scroll-padding-top: 9rem; }
+  .portada { grid-template-columns: 1.1fr 0.9fr; }
+  .lienzo { grid-template-columns: repeat(2, 1fr); }
+  .boceto { grid-template-columns: 19rem 1fr; }
+  .rejilla--2 { grid-template-columns: repeat(2, 1fr); }
+  .rejilla--3 { grid-template-columns: repeat(3, 1fr); }
+  .principios { grid-template-columns: repeat(2, 1fr); }
+  .uso { grid-template-columns: 1fr 1fr; }
+}
+@media (min-width: 70rem) {
+  .lienzo { grid-template-columns: repeat(4, 1fr); }
+}
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  * { transition: none !important; animation: none !important; }
+}
+@media print { .barra, .indice { position: static; } }
+
+
+/* ============================================================
+   PRODUCTO v2: extremos, buscador y comparación
+   ============================================================ */
+.extremos { display: grid; gap: var(--e-2); }
+.extremos__titulo { margin: 0; font-size: var(--t-sm); color: var(--color-texto-suave); }
+.extremos__par { display: grid; grid-template-columns: 1fr 1fr; gap: var(--e-2); }
+.tarjeta-extremo { background: var(--color-superficie); border: var(--borde); border-radius: var(--r-l); padding: var(--e-3); border-top: 4px solid var(--color-acento); min-width: 0; }
+.tarjeta-extremo--alta { border-top-color: var(--color-resalte); }
+.tarjeta-extremo__rol { margin: 0; font-size: var(--t-xs); font-weight: 600; color: var(--color-texto-suave); }
+.tarjeta-extremo--alta .tarjeta-extremo__rol { color: var(--color-resalte); }
+.tarjeta-extremo__region { margin: 0 0 var(--e-1); font-weight: 600; }
+.tarjeta-extremo .cifra { font-size: var(--t-cifra-par); }
+.tarjeta-extremo__var { margin: var(--e-2) 0 0; font-size: var(--t-xs); color: var(--color-texto-suave); }
+.extremos__pais { margin: 0; font-size: var(--t-base); }
+.extremos__fuentes { margin: 0; padding: 0; list-style: none; display: grid; gap: var(--e-1); font-size: var(--t-xs); color: var(--color-texto-suave); }
+.buscador { display: grid; gap: var(--e-3); background: var(--color-superficie); border: var(--borde); border-radius: var(--r-l); padding: var(--e-3); }
+.buscador h4 { margin: 0; font-family: var(--f-titular); font-size: var(--t-lg); }
+.comparador td.dif, .comparador th.dif { color: var(--color-resalte); font-weight: 700; }
+.comparador th[scope="row"] { font-weight: 600; text-align: left; }
+.boceto__caja--extremos { display: flex; gap: var(--e-2); }
+.boceto__caja--extremos span { flex: 1; font-family: var(--f-titular); font-size: var(--t-xs); }
+.boceto__caja--extremos strong { font-size: var(--t-lg); }
+.boceto__caja--tabla { min-height: 4rem; }
+.cifra--par { font-size: var(--t-cifra-par); }
+
+/* ajustes de la revisión: nada se sale del ancho del teléfono */
+.rejilla > *, .escena > *, .pantalla__izq > *, .pantalla__cuerpo > * { min-width: 0; }
+.tabla-envoltura { max-width: 100%; }
+.barra .selector { min-height: var(--objetivo-tactil); }
+/* la tabla tiene pocas columnas: cabe en el teléfono sin desplazarse */
+.tabla { min-width: 0; }
+.tabla th, .tabla td { padding: var(--e-2); }
+.tabla caption { padding: var(--e-3) var(--e-2); }
+.comparador th, .comparador td { padding: var(--e-2) var(--e-1); }
+.comparador th[scope="col"] { font-size: var(--t-xs); overflow-wrap: normal; word-break: normal; }
+.tabla th, .tabla td { padding: var(--e-2) var(--e-1); }
+.tabla th:first-child, .tabla td:first-child { padding-left: var(--e-2); }
+.tabla th:last-child, .tabla td:last-child { padding-right: var(--e-2); }
+
+/* ===== Versión 1 del producto: la pantalla real (usa solo los tokens del design system) ===== */
+.cabecera-app { background: var(--color-superficie); border-bottom: var(--borde); }
+.cabecera-app__fila { max-width: var(--ancho-max); margin: 0 auto; padding: var(--e-2) var(--e-3); display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--e-2) var(--e-4); }
+.cabecera-app .cabecera__nombre { font-size: var(--t-lg); }
+.app { max-width: var(--ancho-max); margin: 0 auto; padding: var(--e-4) var(--e-3) var(--e-5); }
+.app h1 { font-size: var(--t-xl); margin-bottom: var(--e-2); }
+.app__intro { color: var(--color-texto-suave); max-width: 62ch; margin-bottom: var(--e-4); }
+.app__cuerpo { display: grid; gap: var(--e-4); }
+.app__col { display: grid; gap: var(--e-4); align-content: start; min-width: 0; }
+.app__col > * { min-width: 0; }
+.h-seccion { font-size: var(--t-lg); margin-bottom: var(--e-2); }
+.h-pie { font-size: var(--t-md); margin: var(--e-3) 0 var(--e-2); color: var(--color-texto); }
+.buscador h2 { margin: 0; font-family: var(--f-titular); font-size: var(--t-lg); }
+.estado h2 { font-size: var(--t-md); margin-bottom: var(--e-2); }
+.estado--error h2 { color: var(--color-error); }
+.estado--noconsta h2 { color: var(--color-aviso); }
+.nc { display: inline-block; font-family: var(--f-titular); font-weight: 700; font-size: var(--t-lg); color: var(--color-aviso); }
+.mapa__banda.m0 { background: var(--color-superficie-2); color: var(--color-texto); }
+.pie-app { border-top: var(--borde); }
+.pie-app .pie { max-width: var(--ancho-max); margin: 0 auto; background: transparent; border-top: 0; padding: var(--e-4) var(--e-3) var(--e-5); }
+.pie-app .pie p { max-width: 70ch; }
+@media (min-width: 60rem) {
+  .app__cuerpo { grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr); gap: var(--e-5); }
+}
+
+</style>
+</head>
+<body>
+<a class="saltar" href="#contenido">Saltar al contenido</a>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+  <symbol id="i-externo" viewBox="0 0 24 24"><path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/></symbol>
+  <symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/></symbol>
+  <symbol id="i-alerta" viewBox="0 0 24 24"><path d="M12 3l10 18H2L12 3z"/><path d="M12 10v5M12 18h.01"/></symbol>
+</svg>
+<header class="cabecera-app">
+  <div class="cabecera-app__fila">
+    <p class="cabecera__nombre">Observatorio del Empleo</p>
+    <div class="interruptor" role="group" aria-label="Tema de color">
+      <button type="button" id="tema-claro" aria-pressed="true">Claro</button>
+      <button type="button" id="tema-oscuro" aria-pressed="false">Oscuro</button>
+    </div>
+  </div>
+</header>
+<main id="contenido" class="app">
+  <h1>Cómo está el desempleo en tu región, frente al resto del país</h1>
+  <p class="app__intro">Elige tu región, compárala con otra y mira las cifras de mujeres y hombres. Cada cifra trae su fuente.</p>
+  <div id="app" aria-busy="true"><noscript><div class="estado estado--error"><h2>Esta página necesita JavaScript</h2><p>Sin JavaScript no se pueden pedir los datos al agente.</p></div></noscript></div>
+</main>
+<footer id="pie-app" class="pie-app"></footer>
+<p id="anuncio" class="solo-lectores" aria-live="polite"></p>
+<script>
+"use strict";
+
+/* ===== La dirección de mi agente. Es lo único que hay que cambiar para conectar otro agente. ===== */
+const BACKEND = "https://ia-toolkit.constanza-melo.workers.dev";
+
+/* Esta página NO trae cifras escritas: cada número se pide al agente cada vez que se abre. */
+let DATA = null;
+const estado = { fase: "cargando", region: null, otra: null, sort: { col: "tasa", dir: -1 }, leido: null };
+
+/* ---------- utilidades ---------- */
+const ORDEN = ["AP","TA","AN","AT","CO","VS","RM","LI","ML","NB","BI","AR","LR","LL","AI","MA"]; /* códigos, de norte a sur */
+const RANGOS = ["Menos de 6,0%", "6,0% a 7,9%", "8,0% a 9,4%", "9,5% a 10,4%", "10,5% o más"];
+const NC = "No consta";
+
+const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
+const esc = s => String(s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const ok = n => n !== null && n !== undefined && n !== "" && !isNaN(Number(n));
+const fmt = n => (Math.round(Number(n) * 10) / 10).toFixed(1).replace(".", ",");
+const fmtPct = n => (ok(n) ? fmt(n) + "%" : NC);
+const fmtPp = n => (n > 0 ? "+" : n < 0 ? "−" : "") + fmt(Math.abs(n));
+const seguro = u => (typeof u === "string" && /^https:\/\//.test(u) ? u : "#");
+const fechaCorta = iso => (typeof iso === "string" ? iso.split("-").reverse().join("-") : NC);
+const dif = (a, b) => Math.round((a - b) * 10) / 10;
+const nac = () => DATA.nacional || {};
+const reg = c => DATA.regiones.find(r => r.codigo === c);
+const clase = t => (!ok(t) ? 0 : t < 6 ? 1 : t < 8 ? 2 : t < 9.5 ? 3 : t < 10.5 ? 4 : 5);
+const ordenadas = () => {
+  const porCodigo = new Map(DATA.regiones.map(r => [r.codigo, r]));
+  return ORDEN.filter(c => porCodigo.has(c)).map(c => porCodigo.get(c)).concat(DATA.regiones.filter(r => !ORDEN.includes(r.codigo)));
+};
+const dosExtremos = () => {
+  const v = DATA.regiones.filter(r => ok(r.tasa));
+  if (v.length < 2) return null;
+  const o = v.slice().sort((a, b) => b.tasa - a.tasa);
+  return { alta: o[0], baja: o[o.length - 1] };
+};
+
+/* ---------- ÁTOMOS ---------- */
+const icono = id => '<svg class="icono" aria-hidden="true" focusable="false"><use href="#' + id + '"/></svg>';
+const cifraChica = v => (ok(v) ? '<span class="cifra cifra--par">' + fmt(v) + '<span class="cifra__unidad">%</span></span>' : '<span class="nc">' + NC + '</span>');
+
+/* ---------- MOLÉCULAS ---------- */
+function lineaFuente(r) {
+  if (!r.fuente) return '<p class="linea-fuente"><span class="etiqueta">INE, ENE</span><span>Fuente: ' + NC + '</span></p>';
+  return '<p class="linea-fuente"><span class="etiqueta">INE, ENE</span><span>' + esc(r.fuente) + '</span>' +
+    '<a class="enlace" href="' + esc(seguro(r.url)) + '" target="_blank" rel="noopener">Abrir el boletín' + icono("i-externo") + '</a></p>';
+}
+function textoVar(r) {
+  if (!ok(r.variacion_pp)) return "No consta la variación respecto de hace un año";
+  const v = Number(r.variacion_pp), a = fmt(Math.abs(v));
+  if (v > 0) return a + " puntos porcentuales más que hace un año";
+  if (v < 0) return a + " puntos porcentuales menos que hace un año";
+  return "Sin cambio respecto de hace un año";
+}
+function textoPais(r) {
+  if (!ok(r.tasa) || !ok(nac().tasa)) return "No consta la comparación con el promedio del país";
+  const d = dif(r.tasa, nac().tasa), a = fmt(Math.abs(d)), n = fmt(nac().tasa);
+  if (d > 0) return a + " puntos porcentuales sobre el promedio del país (" + n + "%)";
+  if (d < 0) return a + " puntos porcentuales bajo el promedio del país (" + n + "%)";
+  return "Igual al promedio del país (" + n + "%)";
+}
+function selectorRegion(uid, tipo) {
+  const otra = tipo === "otra", val = otra ? estado.otra : estado.region;
+  const op = ordenadas().map(r => '<option value="' + esc(r.codigo) + '"' + (r.codigo === val ? " selected" : "") + '>' + esc(r.region) + '</option>').join("");
+  return '<div class="selector-region"><label class="rotulo" for="sel-' + uid + '">' + (otra ? "Compara con otra región" : "Elige tu región") + '</label>' +
+    '<select class="selector" id="sel-' + uid + '" ' + (otra ? "data-otra" : "data-region") + ' data-key="sel-' + uid + '"' + (otra ? "" : ' aria-describedby="ay-' + uid + '"') + '>' + op + '</select>' +
+    (otra ? "" : '<p class="ayuda" id="ay-' + uid + '">Son las 16 regiones del país. La encuesta no entrega cifras por comuna.</p>') + '</div>';
+}
+function tarjetaExtremo(r, rol) {
+  const alta = rol === "alta";
+  return '<article class="tarjeta-extremo tarjeta-extremo--' + rol + '" aria-label="Región con la tasa más ' + (alta ? "alta" : "baja") + ': ' + esc(r.region) + '">' +
+    '<p class="tarjeta-extremo__rol">' + (alta ? "Más alta" : "Más baja") + '</p>' +
+    '<p class="tarjeta-extremo__region">' + esc(r.region) + '</p>' + cifraChica(r.tasa) +
+    '<p class="tarjeta-extremo__var">' + (ok(r.variacion_pp) ? fmtPp(Number(r.variacion_pp)) + ' pp. en un año' : 'Variación: ' + NC) + '</p></article>';
+}
+function tarjetaCifra(r) {
+  return '<article class="tarjeta-cifra" aria-label="Desocupación en ' + esc(r.region) + '">' +
+    '<p class="tarjeta-cifra__region">Desocupación en <strong>' + esc(r.region) + '</strong>, trimestre ' + esc(DATA.trimestre || NC) + '</p>' +
+    (ok(r.tasa) ? '<span class="cifra cifra--grande">' + fmt(r.tasa) + '<span class="cifra__unidad">%</span></span>' : '<span class="nc">' + NC + '</span>') +
+    '<p class="tarjeta-cifra__variacion">' + (ok(r.variacion_pp) ? '<span class="etiqueta">' + fmtPp(Number(r.variacion_pp)) + ' pp.</span> ' : '') + esc(textoVar(r)) + '</p>' +
+    '<p class="tarjeta-cifra__comparacion">' + esc(textoPais(r)) + '</p>' + lineaFuente(r) + '</article>';
+}
+function comparador(a, b) {
+  const f = (t, k) => '<tr><th scope="row">' + t + '</th><td>' + fmtPct(a[k]) + '</td><td>' + fmtPct(b[k]) + '</td><td class="dif">' +
+    (ok(a[k]) && ok(b[k]) ? fmtPp(dif(a[k], b[k])) + ' pp.' : NC) + '</td></tr>';
+  return '<div class="tabla-envoltura"><table class="tabla comparador"><caption>Desocupación, trimestre ' + esc(DATA.trimestre || NC) + '</caption>' +
+    '<thead><tr><th scope="col"><span class="solo-lectores">Tasa</span></th><th scope="col">' + esc(a.region) + '</th><th scope="col">' + esc(b.region) + '</th><th scope="col">Diferencia</th></tr></thead><tbody>' +
+    f("Total", "tasa") + f("Mujeres", "tasa_mujeres") + f("Hombres", "tasa_hombres") + '</tbody></table></div>' +
+    '<p class="ayuda">Diferencia = ' + esc(a.region) + ' menos ' + esc(b.region) + ', en puntos porcentuales. Es la resta de las dos cifras del boletín.</p>' +
+    lineaFuente(a) + (a.codigo !== b.codigo ? lineaFuente(b) : "");
+}
+function leyenda() {
+  return '<ul class="leyenda" aria-label="Leyenda del mapa: cuanto más oscuro, mayor la tasa de desocupación">' +
+    RANGOS.map((t, i) => '<li><span class="leyenda__muestra m' + (i + 1) + '"></span>' + t + '</li>').join("") + '</ul>';
+}
+
+/* ---------- ESTADOS ---------- */
+const estCargando = () => '<div class="estado" role="status" aria-busy="true"><p style="margin-bottom:var(--e-3)">Cargando los datos del INE, por favor espere unos segundos.</p>' +
+  '<span class="esqueleto" style="height:.9rem;width:55%;margin-bottom:.9rem"></span>' +
+  '<span class="esqueleto" style="height:4rem;width:45%;margin-bottom:.9rem"></span>' +
+  '<span class="esqueleto" style="height:.9rem;width:80%;margin-bottom:.5rem"></span><span class="esqueleto" style="height:.9rem;width:65%"></span></div>';
+const estError = () => '<div class="estado estado--error" role="alert"><h2>' + icono("i-alerta") + ' Perdón, no pudimos traer los datos en este momento.</h2>' +
+  '<p>Por favor, intente de nuevo en unos segundos.</p><button class="btn btn--chico" type="button" data-accion="reintentar">Intentar de nuevo</button></div>';
+const estVacio = () => '<div class="estado estado--vacio"><h2>Sin datos regionales</h2><p>El agente todavía no tiene datos regionales cargados. Por favor, vuelva en unas horas.</p>' +
+  '<button class="btn btn--sec btn--chico" type="button" data-accion="reintentar">Revisar de nuevo</button></div>';
+const estNoConsta = () => '<div class="estado estado--noconsta"><h2>' + icono("i-info") + ' ' + NC + '</h2><p style="margin:0">No consta la cifra de los dos extremos en este boletín.</p></div>';
+
+/* ---------- ORGANISMOS ---------- */
+function extremos() {
+  const e = dosExtremos();
+  if (!e) return estNoConsta();
+  const n = nac();
+  const fu = r => '<li>' + esc(r.region) + ': ' + (r.fuente ? '<a class="enlace" href="' + esc(seguro(r.url)) + '" target="_blank" rel="noopener">' + esc(r.fuente) + icono("i-externo") + '</a>' : NC) + '</li>';
+  return '<section class="extremos" aria-label="Los dos extremos del país">' +
+    '<p class="extremos__titulo">Desocupación, trimestre ' + esc(DATA.trimestre || NC) + '</p>' +
+    '<div class="extremos__par">' + tarjetaExtremo(e.alta, "alta") + tarjetaExtremo(e.baja, "baja") + '</div>' +
+    '<p class="extremos__pais">Promedio del país: <strong>' + fmtPct(n.tasa) + '</strong>' + (ok(n.variacion_pp) ? ' (' + fmtPp(Number(n.variacion_pp)) + ' pp. en un año)' : '') + '</p>' +
+    '<ul class="extremos__fuentes">' + fu(e.alta) + fu(e.baja) +
+    '<li>País: ' + (n.fuente ? '<a class="enlace" href="' + esc(seguro(n.url)) + '" target="_blank" rel="noopener">' + esc(n.fuente) + icono("i-externo") + '</a>' : NC) + '</li></ul></section>';
+}
+function buscador() {
+  const a = reg(estado.region), b = reg(estado.otra);
+  return '<section class="buscador" aria-label="Busca tu región y compara"><h2>Busca tu región</h2>' +
+    selectorRegion("app") + selectorRegion("app-b", "otra") + comparador(a, b) + '</section>';
+}
+function mapa() {
+  const bandas = ordenadas().map(r =>
+    '<li><button type="button" class="mapa__banda m' + clase(r.tasa) + '" data-code="' + esc(r.codigo) + '" data-key="banda-' + esc(r.codigo) + '" aria-pressed="' + (r.codigo === estado.region) + '">' +
+    '<span>' + esc(r.region) + '</span><span class="num">' + fmtPct(r.tasa) + '</span></button></li>').join("");
+  return '<section aria-labelledby="h-mapa"><h2 id="h-mapa" class="h-seccion">Mapa por región</h2>' +
+    '<ul class="mapa" aria-label="Mapa esquemático: desocupación en las 16 regiones, de norte a sur">' + bandas + '</ul>' +
+    '<p class="mapa-nota">Mapa esquemático, de norte a sur y sin escala geográfica. Cuanto más oscuro, mayor la tasa. Toque una banda para elegir su región.</p>' + leyenda() + '</section>';
+}
+const COLUMNAS = [["region", "Región"], ["tasa", "Total"], ["tasa_mujeres", "Mujeres"], ["tasa_hombres", "Hombres"]];
+function tabla() {
+  const { col, dir } = estado.sort;
+  const filas = DATA.regiones.slice().sort((a, b) => {
+    if (col === "region") return dir * String(a.region).localeCompare(String(b.region), "es");
+    const va = ok(a[col]), vb = ok(b[col]);
+    if (!va && !vb) return 0;
+    if (!va) return 1;
+    if (!vb) return -1;
+    return dir * (a[col] - b[col]);
+  });
+  const enc = COLUMNAS.map(([k, t]) => {
+    const activo = k === col, orden = activo ? (dir > 0 ? "ascending" : "descending") : "none";
+    const flecha = activo ? (dir > 0 ? " (de menor a mayor)" : " (de mayor a menor)") : "";
+    return '<th scope="col" aria-sort="' + orden + '"><button type="button" data-sort="' + k + '" data-key="sort-' + k + '">' + t + (activo ? (dir > 0 ? " ▲" : " ▼") : "") + '<span class="solo-lectores">' + flecha + '</span></button></th>';
+  }).join("");
+  const cuerpo = filas.map(r =>
+    '<tr data-code="' + esc(r.codigo) + '" data-sel="' + (r.codigo === estado.region) + '">' +
+    '<th scope="row"><button type="button" class="fila-btn" data-code="' + esc(r.codigo) + '" data-key="fila-' + esc(r.codigo) + '" aria-pressed="' + (r.codigo === estado.region) + '">' + esc(r.region) + '</button></th>' +
+    '<td>' + fmtPct(r.tasa) + '</td><td>' + fmtPct(r.tasa_mujeres) + '</td><td>' + fmtPct(r.tasa_hombres) + '</td></tr>').join("");
+  return '<section aria-labelledby="h-tabla"><h2 id="h-tabla" class="h-seccion">Las 16 regiones</h2>' +
+    '<div class="tabla-envoltura"><table class="tabla"><caption>Desocupación por región, trimestre ' + esc(DATA.trimestre || NC) + '. Fuente: INE, boletines regionales de la Encuesta Nacional de Empleo, publicados el ' + esc(fechaCorta(DATA.fecha_publicacion)) + '. Toque un encabezado para ordenar y una fila para elegir su región.</caption>' +
+    '<thead><tr>' + enc + '</tr></thead><tbody>' + cuerpo + '</tbody></table></div></section>';
+}
+function pie() {
+  let fuentes = "", leido = "";
+  if (DATA) {
+    fuentes = '<p><strong>Fuente.</strong> Las cifras vienen de los boletines del INE del trimestre ' + esc(DATA.trimestre || NC) + ', publicados el ' + esc(fechaCorta(DATA.fecha_publicacion)) +
+      ': el nacional (n.º ' + esc(DATA.boletin || NC) + ') y el de cada región, con su enlace.</p>';
+    if (estado.leido) {
+      const f = estado.leido, p = n => String(n).padStart(2, "0");
+      leido = '<p>Datos leídos en vivo de ' + esc(new URL(BACKEND).host) + ' el ' + p(f.getDate()) + '-' + p(f.getMonth() + 1) + '-' + f.getFullYear() + ' a las ' + p(f.getHours()) + ':' + p(f.getMinutes()) + '.</p>';
+    }
+  }
+  return '<div class="pie">' + fuentes + leido +
+    '<h2 class="h-pie">Cómo usé IA en este producto</h2>' +
+    '<p><strong>Lo que decidí yo:</strong> para quién es el producto (Catalina Castillo, de Ñuble), lo que se ve primero, los colores, las letras, los textos de la página y lo que no promete.</p>' +
+    '<p><strong>Lo que hizo la IA:</strong> Claude, de Anthropic, escribió el código de la página a partir de mis decisiones.</p>' +
+    '<p><strong>Los datos:</strong> no están escritos en la página. Se piden a mi agente cada vez que se abre, y vienen sin modificar de los boletines del INE. Las únicas cifras calculadas son restas entre dos cifras, y las hace el código, no una IA.</p>' +
+    '<p><strong>Verificación:</strong> un agente de IA ordena los datos de los boletines. Yo los verifico y firmo: Constanza Melo Gaete. Catalina Castillo es un personaje de ejemplo. Esta página no contiene claves ni contraseñas.</p></div>';
+}
+
+/* ---------- PANTALLA ---------- */
+function vista() {
+  if (estado.fase === "cargando") return estCargando();
+  if (estado.fase === "error") return estError();
+  if (estado.fase === "vacio") return estVacio();
+  return '<div class="app__cuerpo"><div class="app__col">' + extremos() + buscador() + '</div><div class="app__col">' + tabla() + mapa() + '</div></div>';
+}
+function render() {
+  const app = $("#app");
+  app.setAttribute("aria-busy", String(estado.fase === "cargando"));
+  app.innerHTML = vista();
+  $("#pie-app").innerHTML = pie();
+}
+function anunciar(t) { $("#anuncio").textContent = ""; setTimeout(() => { $("#anuncio").textContent = t; }, 30); }
+function enfocar(clave) { if (!clave) return; const el = document.querySelector('[data-key="' + clave + '"]'); if (el) el.focus({ preventScroll: true }); }
+function setRegion(codigo, clave) {
+  if (!reg(codigo)) return;
+  estado.region = codigo; render();
+  const r = reg(codigo);
+  anunciar("Región elegida: " + r.region + ", desocupación " + fmtPct(r.tasa) + ".");
+  enfocar(clave);
+}
+function setOtra(codigo, clave) {
+  if (!reg(codigo)) return;
+  estado.otra = codigo; render();
+  anunciar("Comparando " + reg(estado.region).region + " con " + reg(codigo).region + ".");
+  enfocar(clave);
+}
+
+/* ---------- DATOS EN VIVO ---------- */
+function preparar() {
+  const e = dosExtremos();
+  if (!reg(estado.region)) estado.region = reg("NB") ? "NB" : DATA.regiones[0].codigo; /* Catalina es de Ñuble */
+  if (!reg(estado.otra) || estado.otra === estado.region) {
+    const cand = e ? (e.baja.codigo !== estado.region ? e.baja : e.alta) : DATA.regiones.find(r => r.codigo !== estado.region) || DATA.regiones[0];
+    estado.otra = cand.codigo;
+  }
+}
+async function cargar() {
+  estado.fase = "cargando"; render();
+  const ctl = new AbortController(), reloj = setTimeout(() => ctl.abort(), 20000);
+  try {
+    const resp = await fetch(BACKEND.replace(/\/$/, "") + "/regiones", { headers: { accept: "application/json" }, signal: ctl.signal });
+    if (!resp.ok) throw new Error("sin respuesta");
+    const d = await resp.json();
+    if (!d || !Array.isArray(d.regiones)) throw new Error("formato inesperado");
+    DATA = d;
+    if (d.regiones.length === 0) { estado.fase = "vacio"; }
+    else { preparar(); estado.leido = new Date(); estado.fase = "listo"; }
+  } catch (e) { estado.fase = "error"; }
+  finally { clearTimeout(reloj); }
+  render();
+}
+
+/* ---------- INTERACCIONES ---------- */
+function fijarTema(t) {
+  if (t === "oscuro") document.documentElement.setAttribute("data-tema", "oscuro"); else document.documentElement.removeAttribute("data-tema");
+  $("#tema-claro").setAttribute("aria-pressed", String(t === "claro"));
+  $("#tema-oscuro").setAttribute("aria-pressed", String(t === "oscuro"));
+}
+document.addEventListener("click", e => {
+  const t = e.target;
+  const ac = t.closest("[data-accion='reintentar']"); if (ac) { cargar(); return; }
+  if (t.closest("#tema-claro")) { fijarTema("claro"); return; }
+  if (t.closest("#tema-oscuro")) { fijarTema("oscuro"); return; }
+  if (estado.fase !== "listo") return;
+  const banda = t.closest("button[data-code]"); if (banda) { setRegion(banda.dataset.code, banda.dataset.key); return; }
+  const fila = t.closest("tr[data-code]"); if (fila && !t.closest("button")) { setRegion(fila.dataset.code); return; }
+  const orden = t.closest("button[data-sort]");
+  if (orden) {
+    const k = orden.dataset.sort;
+    estado.sort = estado.sort.col === k ? { col: k, dir: -estado.sort.dir } : { col: k, dir: k === "region" ? 1 : -1 };
+    render(); enfocar(orden.dataset.key);
+  }
+});
+document.addEventListener("change", e => {
+  const s = e.target.closest("select[data-region]"); if (s) { setRegion(s.value, s.dataset.key); return; }
+  const o = e.target.closest("select[data-otra]"); if (o) setOtra(o.value, o.dataset.key);
+});
+
+/* ---------- inicio ---------- */
+cargar();
+
+</script>
+</body>
+</html>
